@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  db:
+    container_name: postgres_db
+    image: postgres:14
+    networks:
+      - repeater_bot
+    env_file:
+      - default.env
+    ports:
+      - 5432:5432
+
+  app:
+    container_name: fastapi_app
+    build: .
+    networks:
+      - repeater_bot
+    links:
+      - db
+    env_file:
+      - default.env
+    ports:
+      - 8000:8000
+
+networks:
+  repeater_bot:
