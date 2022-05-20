@@ -1,12 +1,14 @@
 from sqlalchemy import Column, Integer, String, Date
-from db import Base, engine
+from db_connect import Base, engine
+from datetime import date
 
 class Dictionary(Base):
     __tablename__ = "dictionary"
-    uid = Column(Integer, primary_key=True)
-    word = Column(String())
-    description = Column(String())
-    date = Column(Date())
+    uid = Column(Integer(), primary_key=True)
+    word = Column(String(20),nullable=False ,unique=True)
+    description = Column(String(120), nullable=False)
+    date_created = Column(Date(), default=date.today())
+    date_updated = Column(Date(), default=date.today(), onupdate=date.today())
 
     def __repr__(self):
         return f"Word: {self.word}"
