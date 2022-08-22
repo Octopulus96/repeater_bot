@@ -3,3 +3,6 @@
 
 #python cash
 __pycache__
+
+#postgresql volumes data
+/pgdbdata
