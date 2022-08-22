@@ -1,5 +1,5 @@
-from db_connect import db_session
-from db_models import Dictionary
+from service.database.db_connect import db_session
+from service.database.db_models import Dictionary
 
 class DatabaseInteraction():
 

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date
-from db_connect import Base, engine
+from service.database.db_connect import Base, engine
 from datetime import date
 
 class Dictionary(Base):
