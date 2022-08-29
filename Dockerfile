@@ -5,7 +5,6 @@ RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root --no-dev
-#убрать service после ./
 COPY service ./service
 
-CMD ["uvicorn", "service.app.main:app", "--host", "0.0.0.0"]
+CMD ["python", "-m", "service.app"]
