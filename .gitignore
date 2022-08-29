@@ -6,3 +6,6 @@ __pycache__
 
 #postgresql volumes data
 /pgdbdata
+
+#logs
+*.log
