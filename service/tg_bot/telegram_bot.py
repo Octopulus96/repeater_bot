@@ -1,6 +1,7 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext
 import os
+from telegram_response import BackendClient
 
 token = os.environ["TG_TOKEN"]
 updater = Updater(token=token, use_context=True)
@@ -26,7 +27,7 @@ def first_add_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"] = {"word": update.message.text}
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
-    #Если такое слово уже есть в базе то сообщаем об этом
+    #Если такое слово уже есть в базе то сообщаем
     update.message.reply_text("Введите переводи или описание")
     return 2
 
@@ -34,7 +35,9 @@ def second_add_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"]["description"] = update.message.text
     if context.user_data["dictionary"]["description"] == "Назад":
         return ConversationHandler.END
-    #Добавляем слово и описание в базу
+    word = context.user_data["dictionary"]["word"]
+    description = context.user_data["dictionary"]["description"]
+    BackendClient.add(word=word, description=description)
     update.message.reply_text("Добавлено")
     return ConversationHandler.END
 
@@ -47,10 +50,12 @@ def first_find_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"] = {"word": update.message.text}
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
-    #Обработка опечатки
-    #Возвращаем описание из базы
-    update.message.reply_text("описание\перевод слова которе мы нашли")
+    #Если слова нет то сообщаем
+    word = context.user_data["dictionary"]["word"]
+    data = BackendClient.search(word=word)
+    update.message.reply_text(f"{data}")
     return ConversationHandler.END
+    #Красиво отформатировать ответ
 
 #change_word
 def change_word(update: Update, context: CallbackContext):
@@ -61,16 +66,26 @@ def first_change_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"] = {"word": update.message.text}
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
-    #Проверка наличия слова в базе
-    #Если слова нету то обрабатываем исключение и выходим
-    update.message.reply_text("Введите новый переводи или описание")
+    #Ищем слово в базе
+    #Если слова нет то сообщаем
+    update.message.reply_text("Введите новое слово")
     return 2
 
 def second_change_response(update: Update, context: CallbackContext):
-    context.user_data["dictionary"]["description"] = update.message.text
-    if context.user_data["dictionary"]["description"] == "Назад":
+    context.user_data["dictionary"]["new_word"] = update.message.text
+    if context.user_data["dictionary"]["new_word"] == "Назад":
         return ConversationHandler.END
-    #Изменяем слово в базе
+    update.message.reply_text("Введите перевод или описание")
+    return 3
+
+def third_change_response(update: Update, context: CallbackContext):
+    context.user_data["dictionary"]["new_description"] = update.message.text
+    if context.user_data["dictionary"]["new_description"] == "Назад":
+        return ConversationHandler.END
+    word = context.user_data["dictionary"]["word"]
+    new_word = context.user_data["dictionary"]["new_word"]
+    new_description = context.user_data["dictionary"]["new_description"]
+    BackendClient.change(word=word, new_word=new_word, new_description=new_description)
     update.message.reply_text("Изменено")
     return ConversationHandler.END
 
@@ -84,8 +99,8 @@ def first_delete_response(update: Update, context: CallbackContext):
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
     # Ищем слово в базе
-    # Если слова нет то сообщаем об этом
-    # Если есть то сообщаем что удалили ну и собсна удаляем
+    # Если слова нет то сообщаем
+    BackendClient.delete(context.user_data["dictionary"]["word"])
     update.message.reply_text("Слово удалено")
     return ConversationHandler.END
 
@@ -109,7 +124,8 @@ def main():
 
     change_handler = ConversationHandler(entry_points=[MessageHandler(Filters.regex("^(Изменить слово)$"), change_word)],
                                          states={1: [MessageHandler(Filters.text & ~Filters.command, first_change_response)],
-                                                 2: [MessageHandler(Filters.text & ~Filters.command, second_change_response)]},
+                                                 2: [MessageHandler(Filters.text & ~Filters.command, second_change_response)],
+                                                 3: [MessageHandler(Filters.text & ~Filters.command, third_change_response)]},
                                          fallbacks=[CommandHandler("back", back),
                                                     MessageHandler(Filters.photo | Filters.video | Filters.document | Filters.location | Filters.voice, back)])
 

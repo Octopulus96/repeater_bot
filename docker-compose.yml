@@ -14,7 +14,8 @@ services:
 
   app:
     container_name: fastapi_app
-    build: .
+    build:
+      dockerfile: Dockerfile.app
     networks:
       - repeater_bot
     links:
@@ -23,6 +24,19 @@ services:
       - default.env
     ports:
       - 8000:8000
+
+  tgbot:
+    container_name: telegram_bot
+    build:
+      dockerfile: Dockerfile.tg
+    networks:
+      - repeater_bot
+    links:
+      - app
+    env_file:
+      - default.env
+    ports:
+      - 5000:5000
 
 networks:
   repeater_bot:
