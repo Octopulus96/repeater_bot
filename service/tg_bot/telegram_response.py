@@ -5,55 +5,40 @@ import os, traceback
 logpath = os.environ["LOGGING_CONF"]
 logging.config.fileConfig(fname=logpath, disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
+back_url = os.environ["BACKEND_URL"]
 
 class BackendClient:
 
     def search(self, word: str):
-        try:
-            resp = httpx.get(url="http://app:8000/repeater_bot/api/v1/get/",
-                             params={"word": word})
-            data = resp.json()
-            logger.debug(f"{resp.encoding}, {resp.url}, {resp.text}")
-            return data["description"]
-        except Exception as exc:
-            logger.exception(traceback.format_exc())
-            raise httpx.HTTPStatusError(response=resp.status_code) from exc
+        resp = httpx.get(url=f"{back_url}/repeater_bot/api/v1/get/",
+                         params={"item": word})
+        data = resp.json()
+        return data
 
 
     def add(self, word: str, description: str):
-        try:
-            resp = httpx.post(url=f"http://app:8000/repeater_bot/api/v1/post/",
-                              json={"word": word,
-                                    "description": description})
-            logger.debug(f"{resp.encoding}, {resp.url}, {resp.text}")
-        except Exception as exc:
-            logger.exception(traceback.format_exc())
-            raise httpx.HTTPStatusError(response=resp.status_code) from exc
+        resp = httpx.post(url=f"{back_url}/repeater_bot/api/v1/post/",
+                          json={"word": word,
+                                "description": description})
+        data = resp.json()
+        return data
+
 
     def change(self, word: str, new_word: str, new_description: str):
-        try:
-            resp = httpx.put(url="http://app:8000/repeater_bot/api/v1/put/",
-                             json={"word": word,
-                                   "new_word": new_word,
-                                   "new_description": new_description})
-            logger.debug(f"{resp.encoding}, {resp.url}, {resp.text}")
-        except Exception as exc:
-            logger.exception(traceback.format_exc())
-            raise httpx.HTTPStatusError(response=resp.status_code) from exc
+        resp = httpx.put(url=f"{back_url}/repeater_bot/api/v1/put/",
+                         json={"word": word,
+                               "new_word": new_word,
+                               "new_description": new_description})
+        data = resp.json()
+        return data
 
 
     def delete(self, word: str):
-        try:
-            resp = httpx.delete(url=f"http://app:8000/repeater_bot/api/v1/delete/{word}")
-            logger.debug(f"{resp.encoding}, {resp.url}, {resp.text}")
-        except Exception as exc:
-            logger.exception(traceback.format_exc())
-            raise httpx.HTTPStatusError(response=resp.status_code) from exc
+        resp = httpx.delete(url=f"{back_url}/repeater_bot/api/v1/delete/",
+                            params={"item": word})
+        data = resp.json()
+        return data
+
 
 if __name__ == "__main__":
-    a = BackendClient()
-    a.add(word="fish", description="рыба")
-    a.search(word="fish")
-    a.change(word="fish", new_word="main", new_description="основной")
-    a.delete(word="main")
-
+    pass

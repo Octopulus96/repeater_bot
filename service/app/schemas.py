@@ -8,10 +8,5 @@ class Item(BaseModel):
     new_word: Optional[str] = None
     new_description: Optional[str] = None
 
-class Resp(BaseModel):
-    uid: int
-    word: str
-    description: str
-    date_created: str
-    date_updated: str
-
+    class Config:
+        orm_mode = True
