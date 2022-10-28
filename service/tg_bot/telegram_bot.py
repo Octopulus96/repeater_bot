@@ -6,6 +6,7 @@ from telegram_response import BackendClient
 token = os.environ["TG_TOKEN"]
 updater = Updater(token=token, use_context=True)
 keybord= [["Найти слово", "Добавить слово", "Изменить слово", "Удалить слово", "Назад"]]
+back_client = BackendClient()
 
 #system_func
 def main_keybord(keybord: list):
@@ -27,17 +28,19 @@ def first_add_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"] = {"word": update.message.text}
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
-    #Если такое слово уже есть в базе то сообщаем
-    update.message.reply_text("Введите переводи или описание")
+    update.message.reply_text("Введите перевод или описание")
     return 2
 
 def second_add_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"]["description"] = update.message.text
     if context.user_data["dictionary"]["description"] == "Назад":
         return ConversationHandler.END
-    word = context.user_data["dictionary"]["word"]
-    description = context.user_data["dictionary"]["description"]
-    BackendClient.add(word=word, description=description)
+    word = context.user_data["dictionary"]["word"].lower()
+    description = context.user_data["dictionary"]["description"].lower()
+    data = back_client.add(word=word, description=description)
+    if data == None:
+        update.message.reply_text("Слово уже добавлено")
+        return ConversationHandler.END
     update.message.reply_text("Добавлено")
     return ConversationHandler.END
 
@@ -50,12 +53,13 @@ def first_find_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"] = {"word": update.message.text}
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
-    #Если слова нет то сообщаем
-    word = context.user_data["dictionary"]["word"]
-    data = BackendClient.search(word=word)
-    update.message.reply_text(f"{data}")
+    word = context.user_data["dictionary"]["word"].lower()
+    data = back_client.search(word=word)
+    if data["description"] == None:
+        update.message.reply_text(f"Слово не найдено")
+        return ConversationHandler.END
+    update.message.reply_text(data["description"])
     return ConversationHandler.END
-    #Красиво отформатировать ответ
 
 #change_word
 def change_word(update: Update, context: CallbackContext):
@@ -66,8 +70,6 @@ def first_change_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"] = {"word": update.message.text}
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
-    #Ищем слово в базе
-    #Если слова нет то сообщаем
     update.message.reply_text("Введите новое слово")
     return 2
 
@@ -82,10 +84,15 @@ def third_change_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"]["new_description"] = update.message.text
     if context.user_data["dictionary"]["new_description"] == "Назад":
         return ConversationHandler.END
-    word = context.user_data["dictionary"]["word"]
-    new_word = context.user_data["dictionary"]["new_word"]
-    new_description = context.user_data["dictionary"]["new_description"]
-    BackendClient.change(word=word, new_word=new_word, new_description=new_description)
+    word = context.user_data["dictionary"]["word"].lower()
+    new_word = context.user_data["dictionary"]["new_word"].lower()
+    new_description = context.user_data["dictionary"]["new_description"].lower()
+    data = back_client.change(word=word,
+                                new_word=new_word,
+                                new_description=new_description)
+    if data == None:
+        update.message.reply_text("Слово не найдено или измениния которые вы хотите внести уже есть")
+        return ConversationHandler.END
     update.message.reply_text("Изменено")
     return ConversationHandler.END
 
@@ -98,16 +105,14 @@ def first_delete_response(update: Update, context: CallbackContext):
     context.user_data["dictionary"] = {"word": update.message.text}
     if context.user_data["dictionary"]["word"] == "Назад":
         return ConversationHandler.END
-    # Ищем слово в базе
-    # Если слова нет то сообщаем
-    BackendClient.delete(context.user_data["dictionary"]["word"])
-    update.message.reply_text("Слово удалено")
-    return ConversationHandler.END
+    data = back_client.delete(context.user_data["dictionary"]["word"].lower())
+    if data == None:
+        update.message.reply_text("Слово удалено")
+        return ConversationHandler.END
 
 
 def main():
     dp = updater.dispatcher
-
 
     add_handler = ConversationHandler(entry_points=[MessageHandler(Filters.regex("^(Добавить слово)$"), add_word)],
                                       states={1: [MessageHandler(Filters.text & ~Filters.command, first_add_response)],
