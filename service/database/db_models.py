@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date
-from database.db_connect import Base, engine
+from service.database.db_connect import Base, engine
 from datetime import date
 
 class Dictionary(Base):
@@ -11,7 +11,7 @@ class Dictionary(Base):
     date_updated = Column(Date(), default=date.today(), onupdate=date.today())
 
     def __repr__(self):
-        return f"Word: {self.word}"
+        return f"{self.word}"
 
 
 if __name__ == "__main__":
